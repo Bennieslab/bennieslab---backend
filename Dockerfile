@@ -12,7 +12,7 @@ RUN chmod +x ./gradlew
 RUN ./gradlew clean build -x test
 
 # Stage 2: Create the final image
-FROM openjdk:23-jre-slim
+FROM eclipse-temurin:23-jre-alpine
 WORKDIR /app
 
 # Copy the built JAR from the builder stage
