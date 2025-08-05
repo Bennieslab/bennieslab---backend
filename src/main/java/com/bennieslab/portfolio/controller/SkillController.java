@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bennieslab.portfolio.model.Skill;
 import com.bennieslab.portfolio.service.SkillService;
 
-@CrossOrigin(origins = "http://localhost:5500")@RestController
+@CrossOrigin(origins = "https://bennieslab.github.io")@RestController
 @RequestMapping("/skills")
 public class SkillController {
     

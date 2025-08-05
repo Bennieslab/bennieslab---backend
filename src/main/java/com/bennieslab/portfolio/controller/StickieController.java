@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/stickie")
-@CrossOrigin(origins = "http://localhost:5500")
+@CrossOrigin(origins = "https://bennieslab.github.io")
 public class StickieController {
 
     @Autowired

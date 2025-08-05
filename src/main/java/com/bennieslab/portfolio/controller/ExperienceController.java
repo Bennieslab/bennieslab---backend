@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bennieslab.portfolio.model.Experience;
 import com.bennieslab.portfolio.service.ExperienceService;
 
-@CrossOrigin(origins = "http://localhost:5500")@RestController
+@CrossOrigin(origins = "https://bennieslab.github.io")@RestController
 @RequestMapping("/experience")
 public class ExperienceController {
 

@@ -17,7 +17,7 @@ import com.bennieslab.portfolio.model.Project;
 import com.bennieslab.portfolio.repository.mini.ProjectMini;
 import com.bennieslab.portfolio.service.ProjectService;
 
-@CrossOrigin(origins = "http://localhost:5500")@RestController
+@CrossOrigin(origins = "https://bennieslab.github.io")@RestController
 @RequestMapping("/projects")
 public class ProjectController {
     
