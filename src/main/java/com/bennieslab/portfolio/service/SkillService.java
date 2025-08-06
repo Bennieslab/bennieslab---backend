@@ -2,32 +2,60 @@ package com.bennieslab.portfolio.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.bennieslab.portfolio.model.Skill;
 import com.bennieslab.portfolio.repository.SkillRepository;
+import com.bennieslab.portfolio.dto.SkillDto; 
 
 @Service
 public class SkillService {
+
+    private final SkillRepository skillRepository;
+    private final FileStorageService fileStorageService; 
+
     @Autowired
-    private SkillRepository skillRepository;
-
-    public Optional<Skill> getSkillById(Long id) {
-        return skillRepository.findById(id);
+    public SkillService(SkillRepository skillRepository, FileStorageService fileStorageService) {
+        this.skillRepository = skillRepository;
+        this.fileStorageService = fileStorageService;
     }
 
-    public List<Skill> getAllSkills() {
-        return skillRepository.findAll();
+    public Optional<SkillDto> getSkillById(Long id) {
+        return skillRepository.findById(id)
+                .map(this::convertToDtoWithPresignedUrl); 
     }
 
-    public Skill addSkill(Skill skill) {
-        return skillRepository.save(skill);
+    public List<SkillDto> getAllSkills() {
+        return skillRepository.findAll().stream()
+                .map(this::convertToDtoWithPresignedUrl) 
+                .collect(Collectors.toList());
+    }
+
+    public SkillDto addSkill(Skill skill) {
+        Skill savedSkill = skillRepository.save(skill);
+        return convertToDtoWithPresignedUrl(savedSkill); 
     }
 
     public void deleteSkill(Long id) {
         skillRepository.deleteById(id);
     }
-    
+
+    private SkillDto convertToDtoWithPresignedUrl(Skill skill) {
+        String presignedUrl = null;
+        if (skill.getThumbnailUrl() != null && !skill.getThumbnailUrl().isEmpty()) {
+            presignedUrl = fileStorageService.getPresignedUrl(skill.getThumbnailUrl());
+        }
+        return new SkillDto(
+                skill.getId(),
+                skill.getName(),
+                skill.getDescription(),
+                skill.getCategory(),
+                presignedUrl, 
+                skill.getDatePosted(),
+                skill.getLastUpdated()
+        );
+    }
 }

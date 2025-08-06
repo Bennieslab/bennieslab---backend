@@ -16,21 +16,27 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bennieslab.portfolio.model.Project;
 import com.bennieslab.portfolio.repository.mini.ProjectMini;
 import com.bennieslab.portfolio.service.ProjectService;
+import com.bennieslab.portfolio.dto.ProjectDto;
 
-@CrossOrigin(origins = "https://bennieslab.github.io")@RestController
+@CrossOrigin(origins = "https://bennieslab.github.io")
+@RestController
 @RequestMapping("/projects")
 public class ProjectController {
     
+    private final ProjectService projectService;
+
     @Autowired
-    private ProjectService projectService;
+    public ProjectController(ProjectService projectService) {
+        this.projectService = projectService;
+    }
 
     @GetMapping("/{id}")
-    public Optional<Project> getprojectById(@PathVariable Long id) {
+    public Optional<ProjectDto> getprojectById(@PathVariable Long id) {
         return projectService.getProjectById(id);
     }
 
     @GetMapping
-    public List<Project> getAllprojects() {
+    public List<ProjectDto> getAllprojects() {
         return projectService.getAllProjects();
     }
 
@@ -40,7 +46,7 @@ public class ProjectController {
     }
 
     @PostMapping
-    public Project createproject(@RequestBody Project project) {
+    public ProjectDto createproject(@RequestBody Project project) {
         return projectService.addProject(project);
     }
 

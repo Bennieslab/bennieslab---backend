@@ -14,26 +14,31 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bennieslab.portfolio.model.Post;
 import com.bennieslab.portfolio.service.PostService;
+import com.bennieslab.portfolio.dto.PostDto;
 
 @RestController
 @RequestMapping("/blog")
 public class PostController {
 
+    private final PostService postService;
+
     @Autowired
-    private PostService postService;
+    public PostController(PostService postService) {
+        this.postService = postService;
+    }
 
     @GetMapping("/{id}")
-    public Optional<Post> getPostById(@PathVariable Long id) {
+    public Optional<PostDto> getPostById(@PathVariable Long id) {
         return postService.getPostById(id);
     }
 
     @GetMapping
-    public List<Post> getPosts() {
+    public List<PostDto> getPosts() {
         return postService.getPosts();
     }
 
     @PostMapping
-    public Post createPost(@RequestBody Post post) {
+    public PostDto createPost(@RequestBody Post post) {
         return postService.createPost(post);
     }
 
@@ -41,5 +46,4 @@ public class PostController {
     public void deleteById(@PathVariable Long id) {
         postService.deletePost(id);
     }
-    
 }

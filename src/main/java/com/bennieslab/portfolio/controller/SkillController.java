@@ -15,26 +15,32 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bennieslab.portfolio.model.Skill;
 import com.bennieslab.portfolio.service.SkillService;
+import com.bennieslab.portfolio.dto.SkillDto;
 
-@CrossOrigin(origins = "https://bennieslab.github.io")@RestController
+@CrossOrigin(origins = "https://bennieslab.github.io")
+@RestController
 @RequestMapping("/skills")
 public class SkillController {
     
+    private final SkillService skillService;
+
     @Autowired
-    private SkillService skillService;
+    public SkillController(SkillService skillService) {
+        this.skillService = skillService;
+    }
 
     @GetMapping("/{id}")
-    public Optional<Skill> getSkillById(@PathVariable Long id) {
+    public Optional<SkillDto> getSkillById(@PathVariable Long id) {
         return skillService.getSkillById(id);
     }
 
     @GetMapping
-    public List<Skill> getAllSkills() {
+    public List<SkillDto> getAllSkills() {
         return skillService.getAllSkills();
     }
 
     @PostMapping
-    public Skill createSkill(@RequestBody Skill skill) {
+    public SkillDto createSkill(@RequestBody Skill skill) {
         return skillService.addSkill(skill);
     }
 
