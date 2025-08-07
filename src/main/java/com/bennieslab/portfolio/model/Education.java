@@ -24,7 +24,7 @@ public class Education {
     @Column(name = "date_ended")
     private LocalDate dateEnded;
 
-    @Column(name = "currently_here", nullable = false, insertable = false, updatable = false)
+    @Column(name = "currently_here", nullable = false)
     private Boolean currentlyHere;
 
     @PrePersist

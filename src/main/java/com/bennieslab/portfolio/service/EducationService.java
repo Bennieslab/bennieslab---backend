@@ -33,7 +33,7 @@ public class EducationService {
             edu.setInstitution(updated.getInstitution());
             edu.setDateStarted(updated.getDateStarted());
             edu.setDateEnded(updated.getDateEnded());
-            edu.setCurrentlyHere(updated.getDateEnded() == null);
+            edu.setCurrentlyHere(updated.getCurrentlyHere());
             return educationRepository.save(edu);
         }).orElseThrow(() -> new RuntimeException("Education not found with ID: " + id));
     }
