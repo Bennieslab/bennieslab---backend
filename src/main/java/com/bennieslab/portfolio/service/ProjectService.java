@@ -3,20 +3,21 @@ package com.bennieslab.portfolio.service;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.bennieslab.portfolio.model.Project;
 import com.bennieslab.portfolio.repository.ProjectRepository;
-import com.bennieslab.portfolio.repository.mini.ProjectMini; 
-import com.bennieslab.portfolio.dto.ProjectDto; 
+import com.bennieslab.portfolio.repository.mini.ProjectMini;
+import com.bennieslab.portfolio.dto.ProjectDto;
 
 @Service
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
-    private final FileStorageService fileStorageService; 
+    private final FileStorageService fileStorageService;
 
     @Autowired
     public ProjectService(ProjectRepository projectRepository, FileStorageService fileStorageService) {
@@ -26,12 +27,12 @@ public class ProjectService {
 
     public Optional<ProjectDto> getProjectById(Long id) {
         return projectRepository.findById(id)
-                .map(this::convertToDtoWithPresignedUrl); 
+                .map(this::convertToDtoWithPresignedUrl);
     }
 
     public List<ProjectDto> getAllProjects() {
         return projectRepository.findAll().stream()
-                .map(this::convertToDtoWithPresignedUrl) 
+                .map(this::convertToDtoWithPresignedUrl)
                 .collect(Collectors.toList());
     }
 
@@ -41,7 +42,24 @@ public class ProjectService {
 
     public ProjectDto addProject(Project project) {
         Project savedProject = projectRepository.save(project);
-        return convertToDtoWithPresignedUrl(savedProject); 
+        return convertToDtoWithPresignedUrl(savedProject);
+    }
+
+    // New update method
+    public ProjectDto updateProject(Long id, Project updatedProject) {
+        return projectRepository.findById(id)
+                .map(project -> {
+                    project.setName(updatedProject.getName());
+                    project.setDescription(updatedProject.getDescription());
+                    project.setCategory(updatedProject.getCategory());
+                    // Update thumbnail if provided
+                    if (updatedProject.getThumbnailUrl() != null) {
+                        project.setThumbnailUrl(updatedProject.getThumbnailUrl());
+                    }
+                    project.setLastUpdated(LocalDateTime.now());
+                    return convertToDtoWithPresignedUrl(projectRepository.save(project));
+                })
+                .orElseThrow(() -> new RuntimeException("Project not found with id " + id));
     }
 
     public void deleteProject(Long id) {
@@ -58,7 +76,7 @@ public class ProjectService {
                 project.getName(),
                 project.getDescription(),
                 project.getCategory(),
-                presignedUrl, 
+                presignedUrl,
                 project.getDatePosted(),
                 project.getLastUpdated()
         );
