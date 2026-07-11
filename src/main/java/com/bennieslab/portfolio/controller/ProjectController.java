@@ -19,6 +19,9 @@ import com.bennieslab.portfolio.repository.mini.ProjectMini;
 import com.bennieslab.portfolio.service.ProjectService;
 import com.bennieslab.portfolio.dto.ProjectDto;
 
+import com.bennieslab.portfolio.dto.ProjectUpdateRequest;
+import com.bennieslab.portfolio.model.Skill;
+
 @CrossOrigin(origins = "https://bennieslab.github.io")
 @RestController
 @RequestMapping("/projects")
@@ -52,7 +55,7 @@ public class ProjectController {
     }
 
     @PutMapping("/{id}")
-    public ProjectDto updateProject(@PathVariable Long id, @RequestBody Project updatedProject) {
+    public ProjectDto updateProject(@PathVariable Long id, @RequestBody ProjectUpdateRequest updatedProject) {
         return projectService.updateProject(id, updatedProject);
     }
 

@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bennieslab.portfolio.model.Post;
 import com.bennieslab.portfolio.service.PostService;
 import com.bennieslab.portfolio.dto.PostDto;
+
+import com.bennieslab.portfolio.dto.PostUpdateRequest;
+import com.bennieslab.portfolio.model.Skill;
 
 @CrossOrigin(origins = "https://bennieslab.github.io")
 @RestController
@@ -45,7 +49,7 @@ public class PostController {
     }
 
     @PutMapping("/{id}")
-    public PostDto updatePost(@PathVariable Long id, @RequestBody Post updatedPost) {
+    public PostDto updatePost(@PathVariable Long id, @RequestBody PostUpdateRequest updatedPost) {
         return postService.updatePost(id, updatedPost);
     }
 

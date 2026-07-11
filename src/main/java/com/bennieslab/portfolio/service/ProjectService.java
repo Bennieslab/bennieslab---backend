@@ -11,21 +11,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.bennieslab.portfolio.model.Project;
+import com.bennieslab.portfolio.model.Skill;
 import com.bennieslab.portfolio.repository.ProjectRepository;
 import com.bennieslab.portfolio.repository.mini.ProjectMini;
 import com.bennieslab.portfolio.dto.ProjectDto;
 import com.bennieslab.portfolio.dto.SkillDto;
+import com.bennieslab.portfolio.repository.SkillRepository;
+import com.bennieslab.portfolio.dto.ProjectUpdateRequest;
+
 
 @Service
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final FileStorageService fileStorageService;
+    private final SkillRepository skillRepository;
 
     @Autowired
-    public ProjectService(ProjectRepository projectRepository, FileStorageService fileStorageService) {
+    public ProjectService(ProjectRepository projectRepository, FileStorageService fileStorageService,
+                        SkillRepository skillRepository) {
         this.projectRepository = projectRepository;
         this.fileStorageService = fileStorageService;
+        this.skillRepository = skillRepository;
     }
 
     public Optional<ProjectDto> getProjectById(Long id) {
@@ -48,21 +55,23 @@ public class ProjectService {
         return convertToDtoWithPresignedUrl(savedProject);
     }
 
-    public ProjectDto updateProject(Long id, Project updatedProject) {
+    public ProjectDto updateProject(Long id, ProjectUpdateRequest updatedProject) {
         return projectRepository.findById(id)
                 .map(project -> {
                     project.setName(updatedProject.getName());
                     project.setDescription(updatedProject.getDescription());
                     project.setCategory(updatedProject.getCategory());
-                    
-                    // Update thumbnail if provided
+
                     if (updatedProject.getThumbnailUrl() != null) {
                         project.setThumbnailUrl(updatedProject.getThumbnailUrl());
                     }
-                    
-                    // Sync technical skill tags
-                    project.setSkills(updatedProject.getSkills());
-                    
+
+                    if (updatedProject.getSkillIds() != null) {
+                        Set<Skill> resolvedSkills = new HashSet<>(
+                                skillRepository.findAllById(updatedProject.getSkillIds()));
+                        project.setSkills(resolvedSkills);
+                    }
+
                     project.setLastUpdated(LocalDateTime.now());
                     return convertToDtoWithPresignedUrl(projectRepository.save(project));
                 })

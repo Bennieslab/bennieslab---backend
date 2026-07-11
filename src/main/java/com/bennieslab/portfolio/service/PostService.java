@@ -15,16 +15,23 @@ import com.bennieslab.portfolio.repository.PostRepository;
 import com.bennieslab.portfolio.dto.PostDto;
 import com.bennieslab.portfolio.dto.SkillDto;
 
+import com.bennieslab.portfolio.repository.SkillRepository;
+import com.bennieslab.portfolio.dto.PostUpdateRequest;
+import com.bennieslab.portfolio.model.Skill;
+
 @Service
 public class PostService {
 
     private final PostRepository postRepository;
     private final FileStorageService fileStorageService;
+    private final SkillRepository skillRepository;
 
     @Autowired
-    public PostService(PostRepository postRepository, FileStorageService fileStorageService) {
+    public PostService(PostRepository postRepository, FileStorageService fileStorageService,
+                        SkillRepository skillRepository) {
         this.postRepository = postRepository;
         this.fileStorageService = fileStorageService;
+        this.skillRepository = skillRepository;
     }
 
     public Optional<PostDto> getPostById(Long id) {
@@ -43,20 +50,26 @@ public class PostService {
         return convertToDtoWithPresignedUrl(savedPost);
     }
 
-    public PostDto updatePost(Long id, Post updatedPost) {
+    public PostDto updatePost(Long id, PostUpdateRequest updatedPost) {
         return postRepository.findById(id)
                 .map(post -> {
                     post.setTitle(updatedPost.getTitle());
                     post.setContent(updatedPost.getContent());
                     post.setCategory(updatedPost.getCategory());
-                    
+
                     if (updatedPost.getThumbnailUrl() != null) {
                         post.setThumbnailUrl(updatedPost.getThumbnailUrl());
                     }
-                    
-                    // Sync attached skills relationship
-                    post.setSkills(updatedPost.getSkills());
-                    
+
+                    // Only touch skills if the client explicitly sent skillIds.
+                    // null means "leave existing associations alone"; an empty
+                    // set is an explicit "clear all skills".
+                    if (updatedPost.getSkillIds() != null) {
+                        Set<Skill> resolvedSkills = new HashSet<>(
+                                skillRepository.findAllById(updatedPost.getSkillIds()));
+                        post.setSkills(resolvedSkills);
+                    }
+
                     post.setLastUpdated(LocalDateTime.now());
                     return convertToDtoWithPresignedUrl(postRepository.save(post));
                 })
