@@ -14,12 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.bennieslab.portfolio.model.Post;
 import com.bennieslab.portfolio.service.PostService;
 import com.bennieslab.portfolio.dto.PostDto;
 
 import com.bennieslab.portfolio.dto.PostUpdateRequest;
-import com.bennieslab.portfolio.model.Skill;
 
 @CrossOrigin(origins = "https://bennieslab.github.io")
 @RestController
@@ -44,7 +42,7 @@ public class PostController {
     }
 
     @PostMapping
-    public PostDto createPost(@RequestBody Post post) {
+    public PostDto createPost(@RequestBody PostUpdateRequest post) {
         return postService.createPost(post);
     }
 

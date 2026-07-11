@@ -50,7 +50,18 @@ public class ProjectService {
         return projectRepository.findAllProjectMini();
     }
 
-    public ProjectDto addProject(Project project) {
+    public ProjectDto addProject(ProjectUpdateRequest request) {
+        Project project = new Project();
+        project.setName(request.getName());
+        project.setDescription(request.getDescription());
+        project.setCategory(request.getCategory());
+        project.setThumbnailUrl(request.getThumbnailUrl());
+
+        if (request.getSkillIds() != null) {
+            Set<Skill> resolvedSkills = new HashSet<>(skillRepository.findAllById(request.getSkillIds()));
+            project.setSkills(resolvedSkills);
+        }
+
         Project savedProject = projectRepository.save(project);
         return convertToDtoWithPresignedUrl(savedProject);
     }

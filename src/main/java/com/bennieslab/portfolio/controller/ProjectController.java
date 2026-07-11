@@ -14,13 +14,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.bennieslab.portfolio.model.Project;
 import com.bennieslab.portfolio.repository.mini.ProjectMini;
 import com.bennieslab.portfolio.service.ProjectService;
 import com.bennieslab.portfolio.dto.ProjectDto;
 
 import com.bennieslab.portfolio.dto.ProjectUpdateRequest;
-import com.bennieslab.portfolio.model.Skill;
 
 @CrossOrigin(origins = "https://bennieslab.github.io")
 @RestController
@@ -50,7 +48,7 @@ public class ProjectController {
     }
 
     @PostMapping
-    public ProjectDto createProject(@RequestBody Project project) {
+    public ProjectDto createProject(@RequestBody ProjectUpdateRequest project) {
         return projectService.addProject(project);
     }
 

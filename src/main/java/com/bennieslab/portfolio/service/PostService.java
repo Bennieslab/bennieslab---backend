@@ -45,7 +45,18 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
-    public PostDto createPost(Post post) {
+    public PostDto createPost(PostUpdateRequest request) {
+        Post post = new Post();
+        post.setTitle(request.getTitle());
+        post.setContent(request.getContent());
+        post.setCategory(request.getCategory());
+        post.setThumbnailUrl(request.getThumbnailUrl());
+
+        if (request.getSkillIds() != null) {
+            Set<Skill> resolvedSkills = new HashSet<>(skillRepository.findAllById(request.getSkillIds()));
+            post.setSkills(resolvedSkills);
+        }
+
         Post savedPost = postRepository.save(post);
         return convertToDtoWithPresignedUrl(savedPost);
     }
