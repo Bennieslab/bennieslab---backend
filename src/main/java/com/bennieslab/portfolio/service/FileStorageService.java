@@ -65,6 +65,10 @@ public class FileStorageService {
             return null; 
         }
 
+        if (fileKey.startsWith("http://") || fileKey.startsWith("https://")) {
+            return fileKey;
+        }
+
         try (S3Presigner presigner = S3Presigner.builder()
                 .region(Region.US_EAST_1) 
                 .endpointOverride(URI.create(endpointUrl)) 
