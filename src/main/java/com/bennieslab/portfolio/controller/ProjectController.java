@@ -32,7 +32,7 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
-    public Optional<ProjectDto> getprojectById(@PathVariable Long id) {
+    public Optional<ProjectDto> getProjectById(@PathVariable Long id) {
         return projectService.getProjectById(id);
     }
 
@@ -47,7 +47,7 @@ public class ProjectController {
     }
 
     @PostMapping
-    public ProjectDto createproject(@RequestBody Project project) {
+    public ProjectDto createProject(@RequestBody Project project) {
         return projectService.addProject(project);
     }
 
@@ -57,7 +57,7 @@ public class ProjectController {
     }
 
     @DeleteMapping("/{id}")
-    public String deleteproject(@PathVariable Long id) {
+    public String deleteProject(@PathVariable Long id) {
         projectService.deleteProject(id);
         return "project deleted successfully";
     }
