@@ -2,6 +2,8 @@ package com.bennieslab.portfolio.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
@@ -12,6 +14,7 @@ import com.bennieslab.portfolio.model.Project;
 import com.bennieslab.portfolio.repository.ProjectRepository;
 import com.bennieslab.portfolio.repository.mini.ProjectMini;
 import com.bennieslab.portfolio.dto.ProjectDto;
+import com.bennieslab.portfolio.dto.SkillDto;
 
 @Service
 public class ProjectService {
@@ -45,17 +48,21 @@ public class ProjectService {
         return convertToDtoWithPresignedUrl(savedProject);
     }
 
-    // New update method
     public ProjectDto updateProject(Long id, Project updatedProject) {
         return projectRepository.findById(id)
                 .map(project -> {
                     project.setName(updatedProject.getName());
                     project.setDescription(updatedProject.getDescription());
                     project.setCategory(updatedProject.getCategory());
+                    
                     // Update thumbnail if provided
                     if (updatedProject.getThumbnailUrl() != null) {
                         project.setThumbnailUrl(updatedProject.getThumbnailUrl());
                     }
+                    
+                    // Sync technical skill tags
+                    project.setSkills(updatedProject.getSkills());
+                    
                     project.setLastUpdated(LocalDateTime.now());
                     return convertToDtoWithPresignedUrl(projectRepository.save(project));
                 })
@@ -71,6 +78,27 @@ public class ProjectService {
         if (project.getThumbnailUrl() != null && !project.getThumbnailUrl().isEmpty()) {
             presignedUrl = fileStorageService.getPresignedUrl(project.getThumbnailUrl());
         }
+
+        // Cleanly map the internal Skill entities to safe, flat SkillDtos
+        Set<SkillDto> skillDtos = project.getSkills() != null ? 
+            project.getSkills().stream()
+                .map(skill -> {
+                    String skillPresignedUrl = null;
+                    if (skill.getThumbnailUrl() != null && !skill.getThumbnailUrl().isEmpty()) {
+                        skillPresignedUrl = fileStorageService.getPresignedUrl(skill.getThumbnailUrl());
+                    }
+                    return new SkillDto(
+                        skill.getId(),
+                        skill.getName(),
+                        skill.getDescription(),
+                        skill.getCategory(),
+                        skillPresignedUrl,
+                        skill.getDatePosted(),
+                        skill.getLastUpdated()
+                    );
+                })
+                .collect(Collectors.toSet()) : new HashSet<>();
+
         return new ProjectDto(
                 project.getId(),
                 project.getName(),
@@ -78,7 +106,8 @@ public class ProjectService {
                 project.getCategory(),
                 presignedUrl,
                 project.getDatePosted(),
-                project.getLastUpdated()
+                project.getLastUpdated(),
+                skillDtos // Appended to your updated ProjectDto constructor
         );
     }
 }

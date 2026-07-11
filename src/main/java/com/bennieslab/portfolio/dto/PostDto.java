@@ -1,33 +1,35 @@
 package com.bennieslab.portfolio.dto;
 
 import java.time.LocalDateTime;
-
+import java.util.Set;
+import java.util.HashSet;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 @Getter
 @Setter
 @NoArgsConstructor
-
 public class PostDto {
     private Long id;
     private String title;
-    private String content; // Assuming you want to send the full content
+    private String content;
     private String category;
-    private String thumbnailUrl; // This will hold the pre-signed URL for the frontend
+    private String thumbnailUrl;
     private LocalDateTime datePosted;
     private LocalDateTime lastUpdated;
+    private Set<SkillDto> skills = new HashSet<>(); // Added skills collection
 
-    // A constructor to easily convert a Post entity to a PostDto
-    public PostDto(Long id, String title, String content, String category, String thumbnailUrl, LocalDateTime datePosted, LocalDateTime lastUpdated) {
+    public PostDto(Long id, String title, String content, String category, 
+                   String thumbnailUrl, LocalDateTime datePosted, LocalDateTime lastUpdated, 
+                   Set<SkillDto> skills) {
         this.id = id;
         this.title = title;
         this.content = content;
         this.category = category;
-        this.thumbnailUrl = thumbnailUrl; // This is where the pre-signed URL will be set
+        this.thumbnailUrl = thumbnailUrl;
         this.datePosted = datePosted;
         this.lastUpdated = lastUpdated;
+        this.skills = skills;
     }
 }

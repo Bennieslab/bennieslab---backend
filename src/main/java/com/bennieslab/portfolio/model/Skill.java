@@ -11,6 +11,11 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.ManyToMany;
+import java.util.Set;
+import java.util.HashSet;
+
 @Entity
 public class Skill {
 
@@ -28,6 +33,14 @@ public class Skill {
     private LocalDateTime lastUpdated;
     @Column(name = "thumbnail_url")
     private String thumbnailUrl;
+
+    @ManyToMany(mappedBy = "skills")
+    @JsonIgnore
+    private Set<Project> projects = new HashSet<>();
+
+    @ManyToMany(mappedBy = "skills")
+    @JsonIgnore
+    private Set<Post> posts = new HashSet<>();
 
     public Skill() {}
 
@@ -96,5 +109,21 @@ public class Skill {
     
     public void setThumbnailUrl(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public Set<Project> getProjects() {
+        return projects;
+    }
+
+    public void setProjects(Set<Project> projects) {
+        this.projects = projects;
+    }
+
+    public Set<Post> getPosts() {
+        return posts;
+    }
+
+    public void setPosts(Set<Post> posts) {
+        this.posts = posts;
     }
 }
