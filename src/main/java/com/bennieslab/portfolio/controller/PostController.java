@@ -17,6 +17,7 @@ import com.bennieslab.portfolio.model.Post;
 import com.bennieslab.portfolio.service.PostService;
 import com.bennieslab.portfolio.dto.PostDto;
 
+@CrossOrigin(origins = "https://bennieslab.github.io")
 @RestController
 @RequestMapping("/blog")
 public class PostController {
