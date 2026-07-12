@@ -59,6 +59,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/certificate/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/blog/**").permitAll()
                         .requestMatchers("/images/**").permitAll()
+                        .requestMatchers("/health").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
