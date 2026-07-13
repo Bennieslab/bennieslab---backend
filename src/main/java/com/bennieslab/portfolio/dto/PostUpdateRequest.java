@@ -9,6 +9,8 @@ public class PostUpdateRequest {
     private String category;
     private String thumbnailUrl;
     private Set<Long> skillIds; // null = "don't touch skills"; [] = "clear skills"
+    private Boolean pinned;    // null = "don't touch pinned"
+    private Integer sortOrder; // null = "don't touch sortOrder"
 
     public PostUpdateRequest() {}
 
@@ -26,4 +28,10 @@ public class PostUpdateRequest {
 
     public Set<Long> getSkillIds() { return skillIds; }
     public void setSkillIds(Set<Long> skillIds) { this.skillIds = skillIds; }
+
+    public Boolean getPinned() { return pinned; }
+    public void setPinned(Boolean pinned) { this.pinned = pinned; }
+
+    public Integer getSortOrder() { return sortOrder; }
+    public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
 }

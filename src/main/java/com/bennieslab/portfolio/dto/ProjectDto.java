@@ -14,12 +14,14 @@ public class ProjectDto {
     private LocalDateTime datePosted;
     private LocalDateTime lastUpdated;
     private Set<SkillDto> skills = new HashSet<>(); // Added skills collection
+    private boolean pinned;
+    private int sortOrder;
 
     public ProjectDto() {}
 
     public ProjectDto(Long id, String name, String description, String category, 
                       String thumbnailUrl, LocalDateTime datePosted, LocalDateTime lastUpdated, 
-                      Set<SkillDto> skills) {
+                      Set<SkillDto> skills, boolean pinned, int sortOrder) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -28,6 +30,8 @@ public class ProjectDto {
         this.datePosted = datePosted;
         this.lastUpdated = lastUpdated;
         this.skills = skills;
+        this.pinned = pinned;
+        this.sortOrder = sortOrder;
     }
 
     // Getters and Setters
@@ -54,4 +58,10 @@ public class ProjectDto {
 
     public Set<SkillDto> getSkills() { return skills; }
     public void setSkills(Set<SkillDto> skills) { this.skills = skills; }
+
+    public boolean isPinned() { return pinned; }
+    public void setPinned(boolean pinned) { this.pinned = pinned; }
+
+    public int getSortOrder() { return sortOrder; }
+    public void setSortOrder(int sortOrder) { this.sortOrder = sortOrder; }
 }

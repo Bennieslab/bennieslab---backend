@@ -34,6 +34,12 @@ public class Skill {
     @Column(name = "thumbnail_url")
     private String thumbnailUrl;
 
+    @Column(name = "pinned", nullable = false)
+    private boolean pinned = false;
+
+    @Column(name = "sort_order", nullable = false)
+    private int sortOrder = 0;
+
     @ManyToMany(mappedBy = "skills")
     @JsonIgnore
     private Set<Project> projects = new HashSet<>();
@@ -109,6 +115,22 @@ public class Skill {
     
     public void setThumbnailUrl(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public boolean isPinned() {
+        return pinned;
+    }
+
+    public void setPinned(boolean pinned) {
+        this.pinned = pinned;
+    }
+
+    public int getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
     }
 
     public Set<Project> getProjects() {

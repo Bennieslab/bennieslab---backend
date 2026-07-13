@@ -11,11 +11,13 @@ public class SkillDto {
     private String thumbnailUrl;
     private LocalDateTime datePosted;
     private LocalDateTime lastUpdated;
+    private boolean pinned;
+    private int sortOrder;
 
     public SkillDto() {
     }
 
-    public SkillDto(Long id, String name, String description, String category, String thumbnailUrl, LocalDateTime datePosted, LocalDateTime lastUpdated) {
+    public SkillDto(Long id, String name, String description, String category, String thumbnailUrl, LocalDateTime datePosted, LocalDateTime lastUpdated, boolean pinned, int sortOrder) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -23,6 +25,8 @@ public class SkillDto {
         this.thumbnailUrl = thumbnailUrl;
         this.datePosted = datePosted;
         this.lastUpdated = lastUpdated;
+        this.pinned = pinned;
+        this.sortOrder = sortOrder;
     }
 
     // Getters
@@ -81,5 +85,21 @@ public class SkillDto {
 
     public void setLastUpdated(LocalDateTime lastUpdated) {
         this.lastUpdated = lastUpdated;
+    }
+
+    public boolean isPinned() {
+        return pinned;
+    }
+
+    public void setPinned(boolean pinned) {
+        this.pinned = pinned;
+    }
+
+    public int getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
     }
 }

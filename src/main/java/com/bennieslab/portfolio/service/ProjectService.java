@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import com.bennieslab.portfolio.model.Project;
@@ -40,10 +42,20 @@ public class ProjectService {
                 .map(this::convertToDtoWithPresignedUrl);
     }
 
+    /** Full list — used internally and by admin panel (no pagination). */
     public List<ProjectDto> getAllProjects() {
         return projectRepository.findAll().stream()
                 .map(this::convertToDtoWithPresignedUrl)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Paginated list — sorted by pinned DESC → sortOrder ASC → datePosted DESC.
+     * Returns a Spring Page so the controller can forward totalPages/totalElements to the client.
+     */
+    public Page<ProjectDto> getAllProjects(int page, int size) {
+        return projectRepository.findAllSorted(PageRequest.of(page, size))
+                .map(this::convertToDtoWithPresignedUrl);
     }
 
     public List<ProjectMini> getAllProjectNames() {
@@ -56,6 +68,8 @@ public class ProjectService {
         project.setDescription(request.getDescription());
         project.setCategory(request.getCategory());
         project.setThumbnailUrl(request.getThumbnailUrl());
+        if (request.getPinned() != null)    project.setPinned(request.getPinned());
+        if (request.getSortOrder() != null) project.setSortOrder(request.getSortOrder());
 
         if (request.getSkillIds() != null) {
             Set<Skill> resolvedSkills = new HashSet<>(skillRepository.findAllById(request.getSkillIds()));
@@ -75,6 +89,12 @@ public class ProjectService {
 
                     if (updatedProject.getThumbnailUrl() != null) {
                         project.setThumbnailUrl(updatedProject.getThumbnailUrl());
+                    }
+                    if (updatedProject.getPinned() != null) {
+                        project.setPinned(updatedProject.getPinned());
+                    }
+                    if (updatedProject.getSortOrder() != null) {
+                        project.setSortOrder(updatedProject.getSortOrder());
                     }
 
                     if (updatedProject.getSkillIds() != null) {
@@ -100,7 +120,7 @@ public class ProjectService {
         }
 
         // Cleanly map the internal Skill entities to safe, flat SkillDtos
-        Set<SkillDto> skillDtos = project.getSkills() != null ? 
+        Set<SkillDto> skillDtos = project.getSkills() != null ?
             project.getSkills().stream()
                 .map(skill -> {
                     String skillPresignedUrl = null;
@@ -114,7 +134,9 @@ public class ProjectService {
                         skill.getCategory(),
                         skillPresignedUrl,
                         skill.getDatePosted(),
-                        skill.getLastUpdated()
+                        skill.getLastUpdated(),
+                        skill.isPinned(),
+                        skill.getSortOrder()
                     );
                 })
                 .collect(Collectors.toSet()) : new HashSet<>();
@@ -127,7 +149,9 @@ public class ProjectService {
                 presignedUrl,
                 project.getDatePosted(),
                 project.getLastUpdated(),
-                skillDtos // Appended to your updated ProjectDto constructor
+                skillDtos,
+                project.isPinned(),
+                project.getSortOrder()
         );
     }
 }

@@ -19,10 +19,12 @@ public class PostDto {
     private LocalDateTime datePosted;
     private LocalDateTime lastUpdated;
     private Set<SkillDto> skills = new HashSet<>(); // Added skills collection
+    private boolean pinned;
+    private int sortOrder;
 
     public PostDto(Long id, String title, String content, String category, 
                    String thumbnailUrl, LocalDateTime datePosted, LocalDateTime lastUpdated, 
-                   Set<SkillDto> skills) {
+                   Set<SkillDto> skills, boolean pinned, int sortOrder) {
         this.id = id;
         this.title = title;
         this.content = content;
@@ -31,5 +33,7 @@ public class PostDto {
         this.datePosted = datePosted;
         this.lastUpdated = lastUpdated;
         this.skills = skills;
+        this.pinned = pinned;
+        this.sortOrder = sortOrder;
     }
 }

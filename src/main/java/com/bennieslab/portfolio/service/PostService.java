@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import com.bennieslab.portfolio.model.Post;
@@ -39,10 +41,19 @@ public class PostService {
                 .map(this::convertToDtoWithPresignedUrl);
     }
 
+    /** Full list — used internally and by admin panel (no pagination). */
     public List<PostDto> getPosts() {
         return postRepository.findAll().stream()
                 .map(this::convertToDtoWithPresignedUrl)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Paginated list — sorted by pinned DESC → sortOrder ASC → datePosted DESC.
+     */
+    public Page<PostDto> getPosts(int page, int size) {
+        return postRepository.findAllSorted(PageRequest.of(page, size))
+                .map(this::convertToDtoWithPresignedUrl);
     }
 
     public PostDto createPost(PostUpdateRequest request) {
@@ -51,6 +62,8 @@ public class PostService {
         post.setContent(request.getContent());
         post.setCategory(request.getCategory());
         post.setThumbnailUrl(request.getThumbnailUrl());
+        if (request.getPinned() != null)    post.setPinned(request.getPinned());
+        if (request.getSortOrder() != null) post.setSortOrder(request.getSortOrder());
 
         if (request.getSkillIds() != null) {
             Set<Skill> resolvedSkills = new HashSet<>(skillRepository.findAllById(request.getSkillIds()));
@@ -70,6 +83,12 @@ public class PostService {
 
                     if (updatedPost.getThumbnailUrl() != null) {
                         post.setThumbnailUrl(updatedPost.getThumbnailUrl());
+                    }
+                    if (updatedPost.getPinned() != null) {
+                        post.setPinned(updatedPost.getPinned());
+                    }
+                    if (updatedPost.getSortOrder() != null) {
+                        post.setSortOrder(updatedPost.getSortOrder());
                     }
 
                     // Only touch skills if the client explicitly sent skillIds.
@@ -98,7 +117,7 @@ public class PostService {
         }
 
         // Safely extract flat skill metrics for blog highlights
-        Set<SkillDto> skillDtos = post.getSkills() != null ? 
+        Set<SkillDto> skillDtos = post.getSkills() != null ?
             post.getSkills().stream()
                 .map(skill -> {
                     String skillPresignedUrl = null;
@@ -112,7 +131,9 @@ public class PostService {
                         skill.getCategory(),
                         skillPresignedUrl,
                         skill.getDatePosted(),
-                        skill.getLastUpdated()
+                        skill.getLastUpdated(),
+                        skill.isPinned(),
+                        skill.getSortOrder()
                     );
                 })
                 .collect(Collectors.toSet()) : new HashSet<>();
@@ -125,7 +146,9 @@ public class PostService {
                 presignedUrl,
                 post.getDatePosted(),
                 post.getLastUpdated(),
-                skillDtos // Appended to your updated PostDto constructor
+                skillDtos,
+                post.isPinned(),
+                post.getSortOrder()
         );
     }
 }
