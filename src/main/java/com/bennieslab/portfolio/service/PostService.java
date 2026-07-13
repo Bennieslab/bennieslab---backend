@@ -4,11 +4,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -52,8 +54,24 @@ public class PostService {
      * Paginated list — sorted by pinned DESC → sortOrder ASC → datePosted DESC.
      */
     public Page<PostDto> getPosts(int page, int size) {
-        return postRepository.findAllSorted(PageRequest.of(page, size))
-                .map(this::convertToDtoWithPresignedUrl);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        List<Post> sortedPosts = postRepository.findAll().stream()
+                .sorted(Comparator.comparing(Post::isPinned).reversed()
+                        .thenComparingInt(Post::getSortOrder)
+                        .thenComparing(Post::getDatePosted, Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+
+        int start = (int) pageRequest.getOffset();
+        if (start >= sortedPosts.size()) {
+            return new PageImpl<>(List.of(), pageRequest, sortedPosts.size());
+        }
+
+        int end = Math.min(start + pageRequest.getPageSize(), sortedPosts.size());
+        List<PostDto> content = sortedPosts.subList(start, end).stream()
+                .map(this::convertToDtoWithPresignedUrl)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(content, pageRequest, sortedPosts.size());
     }
 
     public PostDto createPost(PostUpdateRequest request) {

@@ -2,11 +2,13 @@ package com.bennieslab.portfolio.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -43,8 +45,24 @@ public class SkillService {
      * Paginated list — sorted by pinned DESC → sortOrder ASC → name ASC.
      */
     public Page<SkillDto> getAllSkills(int page, int size) {
-        return skillRepository.findAllSorted(PageRequest.of(page, size))
-                .map(this::convertToDtoWithPresignedUrl);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        List<Skill> sortedSkills = skillRepository.findAll().stream()
+                .sorted(Comparator.comparing(Skill::isPinned).reversed()
+                        .thenComparingInt(Skill::getSortOrder)
+                        .thenComparing(Skill::getName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .collect(Collectors.toList());
+
+        int start = (int) pageRequest.getOffset();
+        if (start >= sortedSkills.size()) {
+            return new PageImpl<>(List.of(), pageRequest, sortedSkills.size());
+        }
+
+        int end = Math.min(start + pageRequest.getPageSize(), sortedSkills.size());
+        List<SkillDto> content = sortedSkills.subList(start, end).stream()
+                .map(this::convertToDtoWithPresignedUrl)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(content, pageRequest, sortedSkills.size());
     }
 
     public SkillDto addSkill(SkillUpdateRequest request) {

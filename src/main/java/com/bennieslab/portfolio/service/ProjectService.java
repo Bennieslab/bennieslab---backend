@@ -4,11 +4,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -54,8 +56,24 @@ public class ProjectService {
      * Returns a Spring Page so the controller can forward totalPages/totalElements to the client.
      */
     public Page<ProjectDto> getAllProjects(int page, int size) {
-        return projectRepository.findAllSorted(PageRequest.of(page, size))
-                .map(this::convertToDtoWithPresignedUrl);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        List<Project> sortedProjects = projectRepository.findAll().stream()
+                .sorted(Comparator.comparing(Project::isPinned).reversed()
+                        .thenComparingInt(Project::getSortOrder)
+                        .thenComparing(Project::getDatePosted, Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+
+        int start = (int) pageRequest.getOffset();
+        if (start >= sortedProjects.size()) {
+            return new PageImpl<>(List.of(), pageRequest, sortedProjects.size());
+        }
+
+        int end = Math.min(start + pageRequest.getPageSize(), sortedProjects.size());
+        List<ProjectDto> content = sortedProjects.subList(start, end).stream()
+                .map(this::convertToDtoWithPresignedUrl)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(content, pageRequest, sortedProjects.size());
     }
 
     public List<ProjectMini> getAllProjectNames() {
