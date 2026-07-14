@@ -51,17 +51,23 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
+    public List<ProjectDto> getAllProjects(String category, Long skillId) {
+        return filterAndSortProjects(category, skillId).stream()
+                .map(this::convertToDtoWithPresignedUrl)
+                .collect(Collectors.toList());
+    }
+
     /**
      * Paginated list — sorted by pinned DESC → sortOrder ASC → datePosted DESC.
      * Returns a Spring Page so the controller can forward totalPages/totalElements to the client.
      */
     public Page<ProjectDto> getAllProjects(int page, int size) {
+        return getAllProjects(page, size, null, null);
+    }
+
+    public Page<ProjectDto> getAllProjects(int page, int size, String category, Long skillId) {
         PageRequest pageRequest = PageRequest.of(page, size);
-        List<Project> sortedProjects = projectRepository.findAll().stream()
-                .sorted(Comparator.comparing(Project::isPinned).reversed()
-                        .thenComparingInt(Project::getSortOrder)
-                        .thenComparing(Project::getDatePosted, Comparator.nullsLast(Comparator.reverseOrder())))
-                .collect(Collectors.toList());
+        List<Project> sortedProjects = filterAndSortProjects(category, skillId);
 
         int start = (int) pageRequest.getOffset();
         if (start >= sortedProjects.size()) {
@@ -74,6 +80,15 @@ public class ProjectService {
                 .collect(Collectors.toList());
 
         return new PageImpl<>(content, pageRequest, sortedProjects.size());
+    }
+
+    public List<String> getAllCategories() {
+        return projectRepository.findAll().stream()
+                .map(Project::getCategory)
+                .filter(category -> category != null && !category.isBlank())
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .collect(Collectors.toList());
     }
 
     public List<ProjectMini> getAllProjectNames() {
@@ -133,6 +148,33 @@ public class ProjectService {
 
     public void deleteProject(Long id) {
         projectRepository.deleteById(id);
+    }
+
+    private List<Project> filterAndSortProjects(String category, Long skillId) {
+        String normalizedCategory = category != null ? category.trim() : null;
+
+        return projectRepository.findAll().stream()
+                .filter(project -> matchesCategory(project, normalizedCategory))
+                .filter(project -> matchesSkill(project, skillId))
+                .sorted(Comparator.comparing(Project::isPinned).reversed()
+                        .thenComparingInt(Project::getSortOrder)
+                        .thenComparing(Project::getDatePosted, Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+    }
+
+    private boolean matchesCategory(Project project, String category) {
+        if (category == null || category.isBlank() || "all".equalsIgnoreCase(category)) {
+            return true;
+        }
+        return project.getCategory() != null && project.getCategory().equalsIgnoreCase(category);
+    }
+
+    private boolean matchesSkill(Project project, Long skillId) {
+        if (skillId == null) {
+            return true;
+        }
+        return project.getSkills() != null && project.getSkills().stream()
+                .anyMatch(skill -> skill.getId() != null && skill.getId().equals(skillId));
     }
 
     private ProjectDto convertToDtoWithPresignedUrl(Project project) {

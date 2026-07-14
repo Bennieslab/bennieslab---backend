@@ -45,13 +45,20 @@ public class PostController {
     @GetMapping
     public ResponseEntity<?> getPosts(
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size) {
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) Long skillId) {
         if (page != null && size != null) {
-            Page<PostDto> result = postService.getPosts(page, size);
+            Page<PostDto> result = postService.getPosts(page, size, category, skillId);
             return ResponseEntity.ok(result);
         }
-        List<PostDto> result = postService.getPosts();
+        List<PostDto> result = postService.getPosts(category, skillId);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/categories")
+    public List<String> getAllCategories() {
+        return postService.getAllCategories();
     }
 
     @PostMapping

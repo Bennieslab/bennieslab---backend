@@ -48,13 +48,20 @@ public class ProjectController {
     @GetMapping
     public ResponseEntity<?> getAllProjects(
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size) {
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) Long skillId) {
         if (page != null && size != null) {
-            Page<ProjectDto> result = projectService.getAllProjects(page, size);
+            Page<ProjectDto> result = projectService.getAllProjects(page, size, category, skillId);
             return ResponseEntity.ok(result);
         }
-        List<ProjectDto> result = projectService.getAllProjects();
+        List<ProjectDto> result = projectService.getAllProjects(category, skillId);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/categories")
+    public List<String> getAllCategories() {
+        return projectService.getAllCategories();
     }
 
     @GetMapping("/names")

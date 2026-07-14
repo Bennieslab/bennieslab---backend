@@ -50,16 +50,22 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
+    public List<PostDto> getPosts(String category, Long skillId) {
+        return filterAndSortPosts(category, skillId).stream()
+                .map(this::convertToDtoWithPresignedUrl)
+                .collect(Collectors.toList());
+    }
+
     /**
      * Paginated list — sorted by pinned DESC → sortOrder ASC → datePosted DESC.
      */
     public Page<PostDto> getPosts(int page, int size) {
+        return getPosts(page, size, null, null);
+    }
+
+    public Page<PostDto> getPosts(int page, int size, String category, Long skillId) {
         PageRequest pageRequest = PageRequest.of(page, size);
-        List<Post> sortedPosts = postRepository.findAll().stream()
-                .sorted(Comparator.comparing(Post::isPinned).reversed()
-                        .thenComparingInt(Post::getSortOrder)
-                        .thenComparing(Post::getDatePosted, Comparator.nullsLast(Comparator.reverseOrder())))
-                .collect(Collectors.toList());
+        List<Post> sortedPosts = filterAndSortPosts(category, skillId);
 
         int start = (int) pageRequest.getOffset();
         if (start >= sortedPosts.size()) {
@@ -72,6 +78,15 @@ public class PostService {
                 .collect(Collectors.toList());
 
         return new PageImpl<>(content, pageRequest, sortedPosts.size());
+    }
+
+    public List<String> getAllCategories() {
+        return postRepository.findAll().stream()
+                .map(Post::getCategory)
+                .filter(category -> category != null && !category.isBlank())
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .collect(Collectors.toList());
     }
 
     public PostDto createPost(PostUpdateRequest request) {
@@ -126,6 +141,33 @@ public class PostService {
 
     public void deletePost(Long id) {
         postRepository.deleteById(id);
+    }
+
+    private List<Post> filterAndSortPosts(String category, Long skillId) {
+        String normalizedCategory = category != null ? category.trim() : null;
+
+        return postRepository.findAll().stream()
+                .filter(post -> matchesCategory(post, normalizedCategory))
+                .filter(post -> matchesSkill(post, skillId))
+                .sorted(Comparator.comparing(Post::isPinned).reversed()
+                        .thenComparingInt(Post::getSortOrder)
+                        .thenComparing(Post::getDatePosted, Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+    }
+
+    private boolean matchesCategory(Post post, String category) {
+        if (category == null || category.isBlank() || "all".equalsIgnoreCase(category)) {
+            return true;
+        }
+        return post.getCategory() != null && post.getCategory().equalsIgnoreCase(category);
+    }
+
+    private boolean matchesSkill(Post post, Long skillId) {
+        if (skillId == null) {
+            return true;
+        }
+        return post.getSkills() != null && post.getSkills().stream()
+                .anyMatch(skill -> skill.getId() != null && skill.getId().equals(skillId));
     }
 
     private PostDto convertToDtoWithPresignedUrl(Post post) {
