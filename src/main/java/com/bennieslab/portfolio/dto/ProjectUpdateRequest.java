@@ -8,6 +8,7 @@ public class ProjectUpdateRequest {
     private String description;
     private String category;
     private String thumbnailUrl;
+    private String githubUrl;
     private Set<Long> skillIds; // null = "don't touch skills"; [] = "clear skills"
     private Boolean pinned;    // null = "don't touch pinned"
     private Integer sortOrder; // null = "don't touch sortOrder"
@@ -25,6 +26,9 @@ public class ProjectUpdateRequest {
 
     public String getThumbnailUrl() { return thumbnailUrl; }
     public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
+
+    public String getGithubUrl() { return githubUrl; }
+    public void setGithubUrl(String githubUrl) { this.githubUrl = githubUrl; }
 
     public Set<Long> getSkillIds() { return skillIds; }
     public void setSkillIds(Set<Long> skillIds) { this.skillIds = skillIds; }

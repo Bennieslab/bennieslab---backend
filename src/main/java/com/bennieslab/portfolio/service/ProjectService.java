@@ -86,6 +86,7 @@ public class ProjectService {
         project.setDescription(request.getDescription());
         project.setCategory(request.getCategory());
         project.setThumbnailUrl(request.getThumbnailUrl());
+        project.setGithubUrl(request.getGithubUrl());
         if (request.getPinned() != null)    project.setPinned(request.getPinned());
         if (request.getSortOrder() != null) project.setSortOrder(request.getSortOrder());
 
@@ -107,6 +108,9 @@ public class ProjectService {
 
                     if (updatedProject.getThumbnailUrl() != null) {
                         project.setThumbnailUrl(updatedProject.getThumbnailUrl());
+                    }
+                    if (updatedProject.getGithubUrl() != null) {
+                        project.setGithubUrl(updatedProject.getGithubUrl());
                     }
                     if (updatedProject.getPinned() != null) {
                         project.setPinned(updatedProject.getPinned());
@@ -165,6 +169,7 @@ public class ProjectService {
                 project.getDescription(),
                 project.getCategory(),
                 presignedUrl,
+                project.getGithubUrl(),
                 project.getDatePosted(),
                 project.getLastUpdated(),
                 skillDtos,

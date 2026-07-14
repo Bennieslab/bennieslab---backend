@@ -36,6 +36,8 @@ public class Project {
     private LocalDateTime lastUpdated;
     @Column(name = "thumbnail_url")
     private String thumbnailUrl;
+    @Column(name = "github_url")
+    private String githubUrl;
 
     @Column(name = "pinned", nullable = false)
     private boolean pinned = false;
@@ -117,6 +119,14 @@ public class Project {
     
     public void setThumbnailUrl(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public String getGithubUrl() {
+        return githubUrl;
+    }
+
+    public void setGithubUrl(String githubUrl) {
+        this.githubUrl = githubUrl;
     }
 
     public boolean isPinned() {

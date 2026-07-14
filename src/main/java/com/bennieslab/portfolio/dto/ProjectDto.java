@@ -11,6 +11,7 @@ public class ProjectDto {
     private String description;
     private String category;
     private String thumbnailUrl;
+    private String githubUrl;
     private LocalDateTime datePosted;
     private LocalDateTime lastUpdated;
     private Set<SkillDto> skills = new HashSet<>(); // Added skills collection
@@ -20,13 +21,14 @@ public class ProjectDto {
     public ProjectDto() {}
 
     public ProjectDto(Long id, String name, String description, String category, 
-                      String thumbnailUrl, LocalDateTime datePosted, LocalDateTime lastUpdated, 
+                      String thumbnailUrl, String githubUrl, LocalDateTime datePosted, LocalDateTime lastUpdated, 
                       Set<SkillDto> skills, boolean pinned, int sortOrder) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.category = category;
         this.thumbnailUrl = thumbnailUrl;
+        this.githubUrl = githubUrl;
         this.datePosted = datePosted;
         this.lastUpdated = lastUpdated;
         this.skills = skills;
@@ -49,6 +51,9 @@ public class ProjectDto {
 
     public String getThumbnailUrl() { return thumbnailUrl; }
     public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
+
+    public String getGithubUrl() { return githubUrl; }
+    public void setGithubUrl(String githubUrl) { this.githubUrl = githubUrl; }
 
     public LocalDateTime getDatePosted() { return datePosted; }
     public void setDatePosted(LocalDateTime datePosted) { this.datePosted = datePosted; }
