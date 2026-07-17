@@ -34,10 +34,26 @@ public class FileStorageService {
     private String secretKey;
 
     private static final String IMAGE_SUBDIRECTORY = "thumbnails/";
+    public static final String MODEL_SUBDIRECTORY = "models/";
 
+    /**
+     * Stores a file under the default thumbnails/ prefix.
+     * Kept for backward compatibility — existing callers (e.g. the
+     * /upload/thumbnail endpoint) don't need to change.
+     */
     public String storeFile(MultipartFile file) throws IOException {
+        return storeFile(file, IMAGE_SUBDIRECTORY);
+    }
 
-        String uniqueFileName = IMAGE_SUBDIRECTORY + UUID.randomUUID().toString();
+    /**
+     * Stores a file under the given key prefix (e.g. "thumbnails/", "models/").
+     * There's nothing to provision ahead of time — B2/S3 is flat key-value
+     * storage, so the "folder" is just implied by the key prefix and appears
+     * the moment the first object with that prefix is written.
+     */
+    public String storeFile(MultipartFile file, String subdirectory) throws IOException {
+
+        String uniqueFileName = subdirectory + UUID.randomUUID().toString();
 
         try (S3Client s3Client = S3Client.builder()
                 .region(Region.US_EAST_1) 
