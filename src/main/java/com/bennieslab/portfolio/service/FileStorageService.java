@@ -28,6 +28,7 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import com.bennieslab.portfolio.dto.MediaFileDto;
+import com.bennieslab.portfolio.dto.MediaPageDto;
 
 @Service
 public class FileStorageService {
@@ -69,14 +70,14 @@ public class FileStorageService {
      */
     public String storeFile(MultipartFile file, String subdirectory) throws IOException {
 
-        String uniqueFileName = subdirectory + UUID.randomUUID().toString();
+        String uniqueFileName = subdirectory + generateSortableKeySuffix();
 
         try (S3Client s3Client = buildS3Client()) {
 
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
-                    .key(uniqueFileName)
-                    .contentType(file.getContentType())
+                    .key(uniqueFileName) 
+                    .contentType(file.getContentType()) 
                     .build();
 
             s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
@@ -88,9 +89,28 @@ public class FileStorageService {
         }
     }
 
+    /**
+     * S3/B2's ListObjectsV2 only iterates keys in ascending order — there's
+     * no "list by upload date" or "list descending" option. To make
+     * paginated listing surface the newest uploads first anyway, the key
+     * suffix leads with (Long.MAX_VALUE - currentTimeMillis), zero-padded
+     * to a fixed width so it sorts correctly as a string. The smaller this
+     * number is, the more recent the upload — so ascending key order
+     * becomes descending chronological order, for free, with no extra
+     * bucket metadata or database lookups needed.
+     *
+     * Files uploaded before this change used a plain UUID key and won't
+     * retroactively sort correctly relative to newer ones — there's no
+     * migration here, this only governs keys generated from now on.
+     */
+    private String generateSortableKeySuffix() {
+        long descendingTimestamp = Long.MAX_VALUE - System.currentTimeMillis();
+        return String.format("%019d-%s", descendingTimestamp, UUID.randomUUID());
+    }
+
     public String getPresignedUrl(String fileKey) {
         if (fileKey == null || fileKey.isEmpty()) {
-            return null;
+            return null; 
         }
 
         if (fileKey.startsWith("http://") || fileKey.startsWith("https://")) {
@@ -98,8 +118,8 @@ public class FileStorageService {
         }
 
         try (S3Presigner presigner = S3Presigner.builder()
-                .region(Region.US_EAST_1)
-                .endpointOverride(URI.create(endpointUrl))
+                .region(Region.US_EAST_1) 
+                .endpointOverride(URI.create(endpointUrl)) 
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey)))
                 .build()) {
 
@@ -110,70 +130,68 @@ public class FileStorageService {
 
             GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
                     .getObjectRequest(getObjectRequest)
-                    .signatureDuration(Duration.ofMinutes(10))
+                    .signatureDuration(Duration.ofMinutes(10)) 
                     .build();
 
             PresignedGetObjectRequest presignedRequest = presigner.presignGetObject(presignRequest);
-            return presignedRequest.url().toString();
+            return presignedRequest.url().toString(); 
         } catch (S3Exception e) {
 
             System.err.println("Error generating pre-signed URL for key " + fileKey + ": " + e.getMessage());
-            return null;
+            return null; 
         }
     }
 
     /**
-     * Lists every object in the bucket (paginating through B2's
-     * ListObjectsV2 results as needed) and returns them as MediaFileDtos
-     * with a presigned URL and a coarse category derived from the key's
-     * prefix. Used by the admin-only Media Library — this endpoint is
-     * deliberately NOT whitelisted in SecurityConfig, so it requires the
-     * same JWT auth as any other write/admin operation.
+     * Lists one page of files within a single category ("thumbnails" or
+     * "models"), using S3's native prefix + maxKeys + continuationToken
+     * support directly — no in-memory "list everything, then slice" step,
+     * so cost scales with the page size requested, not with total bucket
+     * contents. Admin-only: this method backs GET /media, which is not
+     * whitelisted in SecurityConfig.
      */
-    public List<MediaFileDto> listAllFiles() {
+    public MediaPageDto listFiles(String category, int limit, String continuationToken) {
+        String prefix = resolvePrefix(category);
+
         List<MediaFileDto> files = new ArrayList<>();
+        String nextToken = null;
 
         try (S3Client s3Client = buildS3Client()) {
-            String continuationToken = null;
+            ListObjectsV2Request.Builder requestBuilder = ListObjectsV2Request.builder()
+                    .bucket(bucketName)
+                    .prefix(prefix)
+                    .maxKeys(limit);
 
-            do {
-                ListObjectsV2Request.Builder requestBuilder = ListObjectsV2Request.builder()
-                        .bucket(bucketName);
-                if (continuationToken != null) {
-                    requestBuilder.continuationToken(continuationToken);
-                }
+            if (continuationToken != null && !continuationToken.isBlank()) {
+                requestBuilder.continuationToken(continuationToken);
+            }
 
-                ListObjectsV2Response response = s3Client.listObjectsV2(requestBuilder.build());
+            ListObjectsV2Response response = s3Client.listObjectsV2(requestBuilder.build());
 
-                for (S3Object object : response.contents()) {
-                    String key = object.key();
-                    String category = categorizeKey(key);
+            for (S3Object object : response.contents()) {
+                files.add(new MediaFileDto(
+                        object.key(),
+                        getPresignedUrl(object.key()),
+                        object.size(),
+                        object.lastModified(),
+                        category
+                ));
+            }
 
-                    files.add(new MediaFileDto(
-                            key,
-                            getPresignedUrl(key),
-                            object.size(),
-                            object.lastModified(),
-                            category));
-                }
-
-                continuationToken = Boolean.TRUE.equals(response.isTruncated())
-                        ? response.nextContinuationToken()
-                        : null;
-            } while (continuationToken != null);
+            if (Boolean.TRUE.equals(response.isTruncated())) {
+                nextToken = response.nextContinuationToken();
+            }
         } catch (S3Exception e) {
-            System.err.println("Error listing bucket contents: " + e.getMessage());
+            System.err.println("Error listing '" + category + "' media: " + e.getMessage());
         }
 
-        return files;
+        return new MediaPageDto(files, nextToken, nextToken != null);
     }
 
-    private String categorizeKey(String key) {
-        if (key.startsWith(MODEL_SUBDIRECTORY))
-            return "models";
-        if (key.startsWith(IMAGE_SUBDIRECTORY))
-            return "thumbnails";
-        return "other";
+    private String resolvePrefix(String category) {
+        if ("models".equals(category)) return MODEL_SUBDIRECTORY;
+        if ("thumbnails".equals(category)) return IMAGE_SUBDIRECTORY;
+        throw new IllegalArgumentException("Unknown media category: " + category);
     }
 
     /**

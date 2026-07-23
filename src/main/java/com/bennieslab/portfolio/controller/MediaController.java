@@ -2,7 +2,6 @@ package com.bennieslab.portfolio.controller;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.bennieslab.portfolio.dto.MediaFileDto;
+import com.bennieslab.portfolio.dto.MediaPageDto;
 import com.bennieslab.portfolio.service.FileStorageService;
 
 /**
@@ -33,9 +32,26 @@ public class MediaController {
         this.fileStorageService = fileStorageService;
     }
 
+    /**
+     * One page of files within a single category. category must be
+     * "thumbnails" or "models" — there's no combined/"all categories" mode,
+     * since S3 prefix listing is inherently per-prefix and combining them
+     * would mean giving up true server-side pagination.
+     */
     @GetMapping
-    public List<MediaFileDto> listMedia() {
-        return fileStorageService.listAllFiles();
+    public ResponseEntity<?> listMedia(
+            @RequestParam String category,
+            @RequestParam(defaultValue = "24") int limit,
+            @RequestParam(required = false) String continuationToken) {
+
+        if (!"thumbnails".equals(category) && !"models".equals(category)) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "category must be 'thumbnails' or 'models'");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        MediaPageDto page = fileStorageService.listFiles(category, limit, continuationToken);
+        return ResponseEntity.ok(page);
     }
 
     @DeleteMapping
