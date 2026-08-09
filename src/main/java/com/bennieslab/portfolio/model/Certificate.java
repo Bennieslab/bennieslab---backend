@@ -59,4 +59,9 @@ public class Certificate {
     public void setDateAdded(LocalDateTime dateAdded) {
         this.dateAdded = dateAdded;
     }
+
+    @PrePersist
+    protected void onCreate() {
+        this.dateAdded = LocalDateTime.now();
+    }
 }

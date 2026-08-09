@@ -17,6 +17,15 @@ public class Experience {
     @Column(name = "date_ended")
     private LocalDate dateEnded;
 
+    @Column(name = "currently_here", nullable = false)
+    private Boolean currentlyHere;
+
+    @PrePersist
+    @PreUpdate
+    public void computeCurrentlyHere() {
+        this.currentlyHere = (this.dateEnded == null);
+    }
+
     public long getId() {
         return id;
     }
@@ -51,6 +60,15 @@ public class Experience {
 
     public void setDateEnded (LocalDate dateEnded) {
         this.dateEnded = dateEnded;
+        this.currentlyHere = (dateEnded == null);
+    }
+
+    public Boolean getCurrentlyHere() {
+        return currentlyHere;
+    }
+
+    public void setCurrentlyHere(Boolean currentlyHere) {
+        this.currentlyHere = currentlyHere;
     }
 
 }

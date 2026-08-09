@@ -112,6 +112,11 @@ public class User implements UserDetails {
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
     }
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = new Timestamp(System.currentTimeMillis());
+    }
     
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
