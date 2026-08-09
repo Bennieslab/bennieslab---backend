@@ -2,11 +2,11 @@ package com.bennieslab.portfolio.controller;
 
 import com.bennieslab.portfolio.model.Certificate;
 import com.bennieslab.portfolio.service.CertificateService;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @CrossOrigin(origins = "https://bennieslab.github.io")@RestController
 @RequestMapping("/certificate")
@@ -21,8 +21,9 @@ public class CertificateController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Certificate> getCertificateById(@PathVariable Long id) {
-        return certificateService.getCertificateById(id);
+    public Certificate getCertificateById(@PathVariable Long id) {
+        return certificateService.getCertificateById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Certificate not found with id " + id));
     }
 
     @PostMapping

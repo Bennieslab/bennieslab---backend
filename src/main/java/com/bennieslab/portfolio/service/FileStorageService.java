@@ -149,8 +149,10 @@ public class FileStorageService {
      * so cost scales with the page size requested, not with total bucket
      * contents. Admin-only: this method backs GET /media, which is not
      * whitelisted in SecurityConfig.
+     * Throws IOException so callers can surface the failure instead of
+     * silently receiving an empty page.
      */
-    public MediaPageDto listFiles(String category, int limit, String continuationToken) {
+    public MediaPageDto listFiles(String category, int limit, String continuationToken) throws IOException {
         String prefix = resolvePrefix(category);
 
         List<MediaFileDto> files = new ArrayList<>();
@@ -182,7 +184,7 @@ public class FileStorageService {
                 nextToken = response.nextContinuationToken();
             }
         } catch (S3Exception e) {
-            System.err.println("Error listing '" + category + "' media: " + e.getMessage());
+            throw new IOException("Failed to list '" + category + "' media: " + e.getMessage(), e);
         }
 
         return new MediaPageDto(files, nextToken, nextToken != null);

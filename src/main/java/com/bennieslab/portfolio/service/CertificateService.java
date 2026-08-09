@@ -2,6 +2,7 @@ package com.bennieslab.portfolio.service;
 
 import com.bennieslab.portfolio.model.Certificate;
 import com.bennieslab.portfolio.repository.CertificateRepository;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,10 +34,13 @@ public class CertificateService {
             certificate.setCategory(certificateDetails.getCategory());
             certificate.setDateAdded(certificateDetails.getDateAdded());
             return certificateRepository.save(certificate);
-        }).orElseThrow(() -> new RuntimeException("Certificate not found with id " + id));
+        }).orElseThrow(() -> new ResourceNotFoundException("Certificate not found with id " + id));
     }
 
     public void deleteCertificate(Long id) {
+        if (!certificateRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Certificate not found with id " + id);
+        }
         certificateRepository.deleteById(id);
     }
 }

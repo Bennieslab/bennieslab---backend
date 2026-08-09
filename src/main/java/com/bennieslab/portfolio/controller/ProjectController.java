@@ -1,7 +1,6 @@
 package com.bennieslab.portfolio.controller;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -21,6 +20,7 @@ import com.bennieslab.portfolio.repository.mini.ProjectMini;
 import com.bennieslab.portfolio.service.ProjectService;
 import com.bennieslab.portfolio.dto.ProjectDto;
 import com.bennieslab.portfolio.dto.ProjectUpdateRequest;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
 
 @CrossOrigin(origins = "https://bennieslab.github.io")
 @RestController
@@ -35,8 +35,9 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
-    public Optional<ProjectDto> getProjectById(@PathVariable Long id) {
-        return projectService.getProjectById(id);
+    public ProjectDto getProjectById(@PathVariable Long id) {
+        return projectService.getProjectById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id " + id));
     }
 
     /**

@@ -2,6 +2,7 @@ package com.bennieslab.portfolio.service;
 
 import com.bennieslab.portfolio.model.Stickie;
 import com.bennieslab.portfolio.repository.StickieRepository;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,10 +32,13 @@ public class StickieService {
             existing.setSource(updated.getSource());
             existing.setContent(updated.getContent());
             return stickieRepository.save(existing);
-        }).orElseThrow(() -> new RuntimeException("Stickie not found with ID: " + id));
+        }).orElseThrow(() -> new ResourceNotFoundException("Stickie not found with ID: " + id));
     }
 
     public void deleteStickie(Long id) {
+        if (!stickieRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Stickie not found with ID: " + id);
+        }
         stickieRepository.deleteById(id);
     }
 }

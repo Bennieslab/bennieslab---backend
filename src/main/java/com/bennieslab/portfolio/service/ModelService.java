@@ -4,14 +4,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.bennieslab.portfolio.model.Model;
@@ -21,10 +22,22 @@ import com.bennieslab.portfolio.dto.ModelDto;
 import com.bennieslab.portfolio.dto.SkillDto;
 import com.bennieslab.portfolio.repository.SkillRepository;
 import com.bennieslab.portfolio.dto.ModelUpdateRequest;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
+import com.bennieslab.portfolio.specification.ContentSpecifications;
 
-
+/**
+ * Smart sort chain used for list endpoints:
+ * pinned DESC → sortOrder ASC → datePosted DESC.
+ * Applied as an SQL ORDER BY for real DB-side pagination.
+ */
 @Service
 public class ModelService {
+
+    private static final Sort SMART_SORT = Sort.by(
+            Sort.Order.desc("pinned"),
+            Sort.Order.asc("sortOrder"),
+            Sort.Order.desc("datePosted")
+    );
 
     private final ModelRepository modelRepository;
     private final FileStorageService fileStorageService;
@@ -50,35 +63,31 @@ public class ModelService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Full filtered list — category + skill filters, smart-sorted.
+     * Used by admin panel and non-paginated callers.
+     */
     public List<ModelDto> getAllModels(String category, Long skillId) {
-        return filterAndSortModels(category, skillId).stream()
+        Specification<Model> spec = buildSpecification(category, skillId);
+        return modelRepository.findAll(spec).stream()
                 .map(this::convertToDtoWithPresignedUrl)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Paginated list — sorted by pinned DESC → sortOrder ASC → datePosted DESC.
-     * Returns a Spring Page so the controller can forward totalPages/totalElements to the client.
+     * Paginated list — DB-side filter + sort, then slice via PageRequest.
+     * Only fetches the requested page from the database.
      */
-    public Page<ModelDto> getAllModels(int page, int size) {
-        return getAllModels(page, size, null, null);
+    public Page<ModelDto> getAllModels(int page, int size, String category, Long skillId) {
+        Pageable pageable = PageRequest.of(page, size, SMART_SORT);
+        Specification<Model> spec = buildSpecification(category, skillId);
+        return modelRepository.findAll(spec, pageable)
+                .map(this::convertToDtoWithPresignedUrl);
     }
 
-    public Page<ModelDto> getAllModels(int page, int size, String category, Long skillId) {
-        PageRequest pageRequest = PageRequest.of(page, size);
-        List<Model> sortedModels = filterAndSortModels(category, skillId);
-
-        int start = (int) pageRequest.getOffset();
-        if (start >= sortedModels.size()) {
-            return new PageImpl<>(List.of(), pageRequest, sortedModels.size());
-        }
-
-        int end = Math.min(start + pageRequest.getPageSize(), sortedModels.size());
-        List<ModelDto> content = sortedModels.subList(start, end).stream()
-                .map(this::convertToDtoWithPresignedUrl)
-                .collect(Collectors.toList());
-
-        return new PageImpl<>(content, pageRequest, sortedModels.size());
+    /** Convenience overload without filters. */
+    public Page<ModelDto> getAllModels(int page, int size) {
+        return getAllModels(page, size, null, null);
     }
 
     public List<String> getAllCategories() {
@@ -138,38 +147,19 @@ public class ModelService {
                     model.setLastUpdated(LocalDateTime.now());
                     return convertToDtoWithPresignedUrl(modelRepository.save(model));
                 })
-                .orElseThrow(() -> new RuntimeException("Model not found with id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Model not found with id " + id));
     }
 
     public void deleteModel(Long id) {
+        if (!modelRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Model not found with id " + id);
+        }
         modelRepository.deleteById(id);
     }
 
-    private List<Model> filterAndSortModels(String category, Long skillId) {
-        String normalizedCategory = category != null ? category.trim() : null;
-
-        return modelRepository.findAll().stream()
-                .filter(model -> matchesCategory(model, normalizedCategory))
-                .filter(model -> matchesSkill(model, skillId))
-                .sorted(Comparator.comparing(Model::isPinned).reversed()
-                        .thenComparingInt(Model::getSortOrder)
-                        .thenComparing(Model::getDatePosted, Comparator.nullsLast(Comparator.reverseOrder())))
-                .collect(Collectors.toList());
-    }
-
-    private boolean matchesCategory(Model model, String category) {
-        if (category == null || category.isBlank() || "all".equalsIgnoreCase(category)) {
-            return true;
-        }
-        return model.getCategory() != null && model.getCategory().equalsIgnoreCase(category);
-    }
-
-    private boolean matchesSkill(Model model, Long skillId) {
-        if (skillId == null) {
-            return true;
-        }
-        return model.getSkills() != null && model.getSkills().stream()
-                .anyMatch(skill -> skill.getId() != null && skill.getId().equals(skillId));
+    private Specification<Model> buildSpecification(String category, Long skillId) {
+        return ContentSpecifications.<Model>categoryIs(category, "category")
+                .and(ContentSpecifications.<Model>skillIdIs(skillId));
     }
 
     private ModelDto convertToDtoWithPresignedUrl(Model model) {

@@ -2,11 +2,11 @@ package com.bennieslab.portfolio.controller;
 
 import com.bennieslab.portfolio.model.Stickie;
 import com.bennieslab.portfolio.service.StickieService;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/stickie")
@@ -22,8 +22,9 @@ public class StickieController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Stickie> getStickieById(@PathVariable Long id) {
-        return stickieService.getStickieById(id);
+    public Stickie getStickieById(@PathVariable Long id) {
+        return stickieService.getStickieById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Stickie not found with ID: " + id));
     }
 
     @PostMapping

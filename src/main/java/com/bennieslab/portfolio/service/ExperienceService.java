@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.bennieslab.portfolio.model.Experience;
 import com.bennieslab.portfolio.repository.ExperienceRepository;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
 
 @Service
 public class ExperienceService {
@@ -28,6 +29,9 @@ public class ExperienceService {
     }
 
     public void removeExperience(Long id) {
+        if (!experienceRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Experience not found with id " + id);
+        }
         experienceRepository.deleteById(id);
     }
 }

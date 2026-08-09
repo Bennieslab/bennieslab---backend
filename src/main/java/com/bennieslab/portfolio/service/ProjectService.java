@@ -4,14 +4,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.bennieslab.portfolio.model.Project;
@@ -22,10 +23,22 @@ import com.bennieslab.portfolio.dto.ProjectDto;
 import com.bennieslab.portfolio.dto.SkillDto;
 import com.bennieslab.portfolio.repository.SkillRepository;
 import com.bennieslab.portfolio.dto.ProjectUpdateRequest;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
+import com.bennieslab.portfolio.specification.ContentSpecifications;
 
-
+/**
+ * Smart sort chain used for list endpoints:
+ * pinned DESC → sortOrder ASC → datePosted DESC.
+ * Applied as an SQL ORDER BY for real DB-side pagination.
+ */
 @Service
 public class ProjectService {
+
+    private static final Sort SMART_SORT = Sort.by(
+            Sort.Order.desc("pinned"),
+            Sort.Order.asc("sortOrder"),
+            Sort.Order.desc("datePosted")
+    );
 
     private final ProjectRepository projectRepository;
     private final FileStorageService fileStorageService;
@@ -51,35 +64,31 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Full filtered list — category + skill filters, smart-sorted.
+     * Used by admin panel and non-paginated callers.
+     */
     public List<ProjectDto> getAllProjects(String category, Long skillId) {
-        return filterAndSortProjects(category, skillId).stream()
+        Specification<Project> spec = buildSpecification(category, skillId);
+        return projectRepository.findAll(spec).stream()
                 .map(this::convertToDtoWithPresignedUrl)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Paginated list — sorted by pinned DESC → sortOrder ASC → datePosted DESC.
-     * Returns a Spring Page so the controller can forward totalPages/totalElements to the client.
+     * Paginated list — DB-side filter + sort, then slice via PageRequest.
+     * Only fetches the requested page from the database.
      */
-    public Page<ProjectDto> getAllProjects(int page, int size) {
-        return getAllProjects(page, size, null, null);
+    public Page<ProjectDto> getAllProjects(int page, int size, String category, Long skillId) {
+        Pageable pageable = PageRequest.of(page, size, SMART_SORT);
+        Specification<Project> spec = buildSpecification(category, skillId);
+        return projectRepository.findAll(spec, pageable)
+                .map(this::convertToDtoWithPresignedUrl);
     }
 
-    public Page<ProjectDto> getAllProjects(int page, int size, String category, Long skillId) {
-        PageRequest pageRequest = PageRequest.of(page, size);
-        List<Project> sortedProjects = filterAndSortProjects(category, skillId);
-
-        int start = (int) pageRequest.getOffset();
-        if (start >= sortedProjects.size()) {
-            return new PageImpl<>(List.of(), pageRequest, sortedProjects.size());
-        }
-
-        int end = Math.min(start + pageRequest.getPageSize(), sortedProjects.size());
-        List<ProjectDto> content = sortedProjects.subList(start, end).stream()
-                .map(this::convertToDtoWithPresignedUrl)
-                .collect(Collectors.toList());
-
-        return new PageImpl<>(content, pageRequest, sortedProjects.size());
+    /** Convenience overload without filters. */
+    public Page<ProjectDto> getAllProjects(int page, int size) {
+        return getAllProjects(page, size, null, null);
     }
 
     public List<String> getAllCategories() {
@@ -143,38 +152,19 @@ public class ProjectService {
                     project.setLastUpdated(LocalDateTime.now());
                     return convertToDtoWithPresignedUrl(projectRepository.save(project));
                 })
-                .orElseThrow(() -> new RuntimeException("Project not found with id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id " + id));
     }
 
     public void deleteProject(Long id) {
+        if (!projectRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Project not found with id " + id);
+        }
         projectRepository.deleteById(id);
     }
 
-    private List<Project> filterAndSortProjects(String category, Long skillId) {
-        String normalizedCategory = category != null ? category.trim() : null;
-
-        return projectRepository.findAll().stream()
-                .filter(project -> matchesCategory(project, normalizedCategory))
-                .filter(project -> matchesSkill(project, skillId))
-                .sorted(Comparator.comparing(Project::isPinned).reversed()
-                        .thenComparingInt(Project::getSortOrder)
-                        .thenComparing(Project::getDatePosted, Comparator.nullsLast(Comparator.reverseOrder())))
-                .collect(Collectors.toList());
-    }
-
-    private boolean matchesCategory(Project project, String category) {
-        if (category == null || category.isBlank() || "all".equalsIgnoreCase(category)) {
-            return true;
-        }
-        return project.getCategory() != null && project.getCategory().equalsIgnoreCase(category);
-    }
-
-    private boolean matchesSkill(Project project, Long skillId) {
-        if (skillId == null) {
-            return true;
-        }
-        return project.getSkills() != null && project.getSkills().stream()
-                .anyMatch(skill -> skill.getId() != null && skill.getId().equals(skillId));
+    private Specification<Project> buildSpecification(String category, Long skillId) {
+        return ContentSpecifications.<Project>categoryIs(category, "category")
+                .and(ContentSpecifications.<Project>skillIdIs(skillId));
     }
 
     private ProjectDto convertToDtoWithPresignedUrl(Project project) {

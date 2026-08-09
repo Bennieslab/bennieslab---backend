@@ -1,7 +1,6 @@
 package com.bennieslab.portfolio.controller;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -15,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bennieslab.portfolio.model.Experience;
 import com.bennieslab.portfolio.service.ExperienceService;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
 
 @CrossOrigin(origins = "https://bennieslab.github.io")@RestController
 @RequestMapping("/experience")
@@ -24,8 +24,9 @@ public class ExperienceController {
     private ExperienceService experienceService;
 
     @GetMapping("/{id}")
-    public Optional<Experience> getExperienceById(@PathVariable Long id) {
-        return experienceService.getExperienceById(id);
+    public Experience getExperienceById(@PathVariable Long id) {
+        return experienceService.getExperienceById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Experience not found with id " + id));
     }
 
     @GetMapping

@@ -1,7 +1,6 @@
 package com.bennieslab.portfolio.controller;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bennieslab.portfolio.service.PostService;
 import com.bennieslab.portfolio.dto.PostDto;
 import com.bennieslab.portfolio.dto.PostUpdateRequest;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
 
 @CrossOrigin(origins = "https://bennieslab.github.io")
 @RestController
@@ -34,8 +34,9 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    public Optional<PostDto> getPostById(@PathVariable Long id) {
-        return postService.getPostById(id);
+    public PostDto getPostById(@PathVariable Long id) {
+        return postService.getPostById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id " + id));
     }
 
     /**

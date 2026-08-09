@@ -2,23 +2,35 @@ package com.bennieslab.portfolio.service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.bennieslab.portfolio.model.Skill;
 import com.bennieslab.portfolio.repository.SkillRepository;
 import com.bennieslab.portfolio.dto.SkillDto;
 import com.bennieslab.portfolio.dto.SkillUpdateRequest;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
 
+/**
+ * Smart sort chain used for list endpoints:
+ * pinned DESC → sortOrder ASC → name ASC.
+ * Applied as an SQL ORDER BY for real DB-side pagination.
+ */
 @Service
 public class SkillService {
+
+    private static final Sort SMART_SORT = Sort.by(
+            Sort.Order.desc("pinned"),
+            Sort.Order.asc("sortOrder"),
+            Sort.Order.asc("name").ignoreCase()
+    );
 
     private final SkillRepository skillRepository;
     private final FileStorageService fileStorageService;
@@ -36,33 +48,19 @@ public class SkillService {
 
     /** Full list — used internally and by admin panel (no pagination). */
     public List<SkillDto> getAllSkills() {
-        return skillRepository.findAll().stream()
+        return skillRepository.findAll(SMART_SORT).stream()
                 .map(this::convertToDtoWithPresignedUrl)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Paginated list — sorted by pinned DESC → sortOrder ASC → name ASC.
+     * Paginated list — DB-side sort applied via Pageable, only the
+     * requested page is fetched from the database.
      */
     public Page<SkillDto> getAllSkills(int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page, size);
-        List<Skill> sortedSkills = skillRepository.findAll().stream()
-                .sorted(Comparator.comparing(Skill::isPinned).reversed()
-                        .thenComparingInt(Skill::getSortOrder)
-                        .thenComparing(Skill::getName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
-                .collect(Collectors.toList());
-
-        int start = (int) pageRequest.getOffset();
-        if (start >= sortedSkills.size()) {
-            return new PageImpl<>(List.of(), pageRequest, sortedSkills.size());
-        }
-
-        int end = Math.min(start + pageRequest.getPageSize(), sortedSkills.size());
-        List<SkillDto> content = sortedSkills.subList(start, end).stream()
-                .map(this::convertToDtoWithPresignedUrl)
-                .collect(Collectors.toList());
-
-        return new PageImpl<>(content, pageRequest, sortedSkills.size());
+        Pageable pageable = PageRequest.of(page, size, SMART_SORT);
+        return skillRepository.findAll(pageable)
+                .map(this::convertToDtoWithPresignedUrl);
     }
 
     public SkillDto addSkill(SkillUpdateRequest request) {
@@ -96,10 +94,13 @@ public class SkillService {
                     skill.setLastUpdated(LocalDateTime.now());
                     return convertToDtoWithPresignedUrl(skillRepository.save(skill));
                 })
-                .orElseThrow(() -> new RuntimeException("Skill not found with id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Skill not found with id " + id));
     }
 
     public void deleteSkill(Long id) {
+        if (!skillRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Skill not found with id " + id);
+        }
         skillRepository.deleteById(id);
     }
 

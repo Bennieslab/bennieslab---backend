@@ -50,8 +50,14 @@ public class MediaController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
 
-        MediaPageDto page = fileStorageService.listFiles(category, limit, continuationToken);
-        return ResponseEntity.ok(page);
+        try {
+            MediaPageDto page = fileStorageService.listFiles(category, limit, continuationToken);
+            return ResponseEntity.ok(page);
+        } catch (IOException ex) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Could not list files: " + ex.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
     }
 
     @DeleteMapping

@@ -1,7 +1,6 @@
 package com.bennieslab.portfolio.controller;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bennieslab.portfolio.service.ModelService;
 import com.bennieslab.portfolio.dto.ModelDto;
 import com.bennieslab.portfolio.dto.ModelUpdateRequest;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
 
 @CrossOrigin(origins = "https://bennieslab.github.io")
 @RestController
@@ -34,8 +34,9 @@ public class ModelController {
     }
 
     @GetMapping("/{id}")
-    public Optional<ModelDto> getModelById(@PathVariable Long id) {
-        return modelService.getModelById(id);
+    public ModelDto getModelById(@PathVariable Long id) {
+        return modelService.getModelById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Model not found with id " + id));
     }
 
     /**

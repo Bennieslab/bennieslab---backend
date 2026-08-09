@@ -2,11 +2,11 @@ package com.bennieslab.portfolio.controller;
 
 import com.bennieslab.portfolio.model.Education;
 import com.bennieslab.portfolio.service.EducationService;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @CrossOrigin(origins = "https://bennieslab.github.io")@RestController
 @RequestMapping("/education")
@@ -21,8 +21,9 @@ public class EducationController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Education> getEducationById(@PathVariable Long id) {
-        return educationService.getEducationById(id);
+    public Education getEducationById(@PathVariable Long id) {
+        return educationService.getEducationById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Education not found with ID: " + id));
     }
 
     @PostMapping

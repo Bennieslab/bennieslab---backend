@@ -1,7 +1,6 @@
 package com.bennieslab.portfolio.controller;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bennieslab.portfolio.service.SkillService;
 import com.bennieslab.portfolio.dto.SkillDto;
 import com.bennieslab.portfolio.dto.SkillUpdateRequest;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
 
 @CrossOrigin(origins = "https://bennieslab.github.io")
 @RestController
@@ -34,8 +34,9 @@ public class SkillController {
     }
 
     @GetMapping("/{id}")
-    public Optional<SkillDto> getSkillById(@PathVariable Long id) {
-        return skillService.getSkillById(id);
+    public SkillDto getSkillById(@PathVariable Long id) {
+        return skillService.getSkillById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Skill not found with id " + id));
     }
 
     /**

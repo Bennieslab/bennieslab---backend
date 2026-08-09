@@ -2,6 +2,7 @@ package com.bennieslab.portfolio.service;
 
 import com.bennieslab.portfolio.model.Education;
 import com.bennieslab.portfolio.repository.EducationRepository;
+import com.bennieslab.portfolio.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -35,10 +36,13 @@ public class EducationService {
             edu.setDateEnded(updated.getDateEnded());
             edu.setCurrentlyHere(updated.getCurrentlyHere());
             return educationRepository.save(edu);
-        }).orElseThrow(() -> new RuntimeException("Education not found with ID: " + id));
+        }).orElseThrow(() -> new ResourceNotFoundException("Education not found with ID: " + id));
     }
 
     public void deleteEducation(Long id) {
+        if (!educationRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Education not found with ID: " + id);
+        }
         educationRepository.deleteById(id);
     }
 }
