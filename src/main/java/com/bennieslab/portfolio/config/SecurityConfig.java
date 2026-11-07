@@ -64,6 +64,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/blog/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/models/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/stickie/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/releases/**").permitAll()
                         .requestMatchers("/images/**").permitAll()
                         .anyRequest().hasAuthority("ADMIN")
                 )

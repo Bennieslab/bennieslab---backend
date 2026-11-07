@@ -9,6 +9,7 @@ public class ProjectUpdateRequest {
     private String category;
     private String thumbnailUrl;
     private String githubUrl;
+    private String liveUrl;
     private Set<Long> skillIds; // null = "don't touch skills"; [] = "clear skills"
     private Boolean pinned;    // null = "don't touch pinned"
     private Integer sortOrder; // null = "don't touch sortOrder"
@@ -29,6 +30,9 @@ public class ProjectUpdateRequest {
 
     public String getGithubUrl() { return githubUrl; }
     public void setGithubUrl(String githubUrl) { this.githubUrl = githubUrl; }
+
+    public String getLiveUrl() { return liveUrl; }
+    public void setLiveUrl(String liveUrl) { this.liveUrl = liveUrl; }
 
     public Set<Long> getSkillIds() { return skillIds; }
     public void setSkillIds(Set<Long> skillIds) { this.skillIds = skillIds; }

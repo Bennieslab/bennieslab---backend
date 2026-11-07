@@ -12,6 +12,7 @@ public class ProjectDto {
     private String category;
     private String thumbnailUrl;
     private String githubUrl;
+    private String liveUrl;
     private LocalDateTime datePosted;
     private LocalDateTime lastUpdated;
     private Set<SkillDto> skills = new HashSet<>(); // Added skills collection
@@ -21,7 +22,7 @@ public class ProjectDto {
     public ProjectDto() {}
 
     public ProjectDto(Long id, String name, String description, String category, 
-                      String thumbnailUrl, String githubUrl, LocalDateTime datePosted, LocalDateTime lastUpdated, 
+                      String thumbnailUrl, String githubUrl, String liveUrl, LocalDateTime datePosted, LocalDateTime lastUpdated, 
                       Set<SkillDto> skills, boolean pinned, int sortOrder) {
         this.id = id;
         this.name = name;
@@ -29,11 +30,18 @@ public class ProjectDto {
         this.category = category;
         this.thumbnailUrl = thumbnailUrl;
         this.githubUrl = githubUrl;
+        this.liveUrl = liveUrl;
         this.datePosted = datePosted;
         this.lastUpdated = lastUpdated;
         this.skills = skills;
         this.pinned = pinned;
         this.sortOrder = sortOrder;
+    }
+
+    public ProjectDto(Long id, String name, String description, String category, 
+                      String thumbnailUrl, String githubUrl, LocalDateTime datePosted, LocalDateTime lastUpdated, 
+                      Set<SkillDto> skills, boolean pinned, int sortOrder) {
+        this(id, name, description, category, thumbnailUrl, githubUrl, null, datePosted, lastUpdated, skills, pinned, sortOrder);
     }
 
     // Getters and Setters
@@ -54,6 +62,9 @@ public class ProjectDto {
 
     public String getGithubUrl() { return githubUrl; }
     public void setGithubUrl(String githubUrl) { this.githubUrl = githubUrl; }
+
+    public String getLiveUrl() { return liveUrl; }
+    public void setLiveUrl(String liveUrl) { this.liveUrl = liveUrl; }
 
     public LocalDateTime getDatePosted() { return datePosted; }
     public void setDatePosted(LocalDateTime datePosted) { this.datePosted = datePosted; }

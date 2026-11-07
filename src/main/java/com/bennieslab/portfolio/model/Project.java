@@ -38,6 +38,8 @@ public class Project {
     private String thumbnailUrl;
     @Column(name = "github_url")
     private String githubUrl;
+    @Column(name = "live_url")
+    private String liveUrl;
 
     @Column(name = "pinned", nullable = false)
     private boolean pinned = false;
@@ -127,6 +129,14 @@ public class Project {
 
     public void setGithubUrl(String githubUrl) {
         this.githubUrl = githubUrl;
+    }
+
+    public String getLiveUrl() {
+        return liveUrl;
+    }
+
+    public void setLiveUrl(String liveUrl) {
+        this.liveUrl = liveUrl;
     }
 
     public boolean isPinned() {
