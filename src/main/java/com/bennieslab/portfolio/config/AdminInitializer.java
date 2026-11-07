@@ -43,7 +43,7 @@ public class AdminInitializer {
                 admin.setEmail(adminEmail);
                 admin.setPassword(passwordEncoder.encode(adminPassword));
                 admin.setRole(Role.ADMIN);
-                admin.setCareer("Computer Science Student");
+                admin.setCareer("Computer Science Graduate");
                 admin.setLocation("Livingstone, Zambia");
 
                 userRepository.save(admin);
@@ -66,6 +66,12 @@ public class AdminInitializer {
                 }
                 if (adminLastName != null && !adminLastName.isBlank() && !adminLastName.equals(admin.getLastName())) {
                     admin.setLastName(adminLastName);
+                    updated = true;
+                }
+
+                // Sync career title from student to graduate
+                if ("Computer Science Student".equals(admin.getCareer())) {
+                    admin.setCareer("Computer Science Graduate");
                     updated = true;
                 }
 
