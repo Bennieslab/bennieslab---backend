@@ -19,6 +19,13 @@ public class UserController {
         this.userService = userService;
     }
 
+    @GetMapping("/profile")
+    public ResponseEntity<UserPublicDto> getProfile() {
+        return userService.getAdminProfile()
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/email/{email}")
     public ResponseEntity<UserPublicDto> getUserByEmail(@PathVariable String email) {
         Optional<UserPublicDto> userDtoOptional = userService.getUserByEmail(email);

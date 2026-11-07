@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,11 +20,45 @@ import com.bennieslab.portfolio.service.FileStorageService;
 @RequestMapping("/upload")
 public class FileUploadController {
 
+    private static final Set<String> ALLOWED_IMAGE_MIME_TYPES = Set.of(
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/gif"
+    );
+
+    private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = Set.of(
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+            ".gif"
+    );
+
     @Autowired
     private FileStorageService fileStorageService;
 
     @PostMapping("/thumbnail")
     public ResponseEntity<?> uploadThumbnail(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "File cannot be empty.");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        String lowerFilename = originalFilename != null ? originalFilename.toLowerCase(Locale.ROOT) : "";
+        boolean validExtension = ALLOWED_IMAGE_EXTENSIONS.stream().anyMatch(lowerFilename::endsWith);
+
+        String contentType = file.getContentType();
+        boolean validMime = contentType != null && ALLOWED_IMAGE_MIME_TYPES.contains(contentType.toLowerCase(Locale.ROOT));
+
+        if (!validExtension || !validMime) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Only valid image files (.jpg, .jpeg, .png, .webp, .gif) are accepted for thumbnails.");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
         try {
             String fileUrl = fileStorageService.storeFile(file);
             Map<String, String> response = new HashMap<>();
@@ -45,6 +80,12 @@ public class FileUploadController {
      */
     @PostMapping("/model")
     public ResponseEntity<?> uploadModel(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "File cannot be empty.");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
         String originalFilename = file.getOriginalFilename();
         String lowerFilename = originalFilename != null ? originalFilename.toLowerCase(Locale.ROOT) : "";
 

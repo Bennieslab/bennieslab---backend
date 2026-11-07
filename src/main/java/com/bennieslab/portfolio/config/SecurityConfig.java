@@ -34,7 +34,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("https://bennieslab.github.io"));
+        configuration.setAllowedOrigins(List.of(
+                "https://bennieslab.github.io",
+                "http://localhost:5500",
+                "http://127.0.0.1:5500"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -49,7 +53,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/health").permitAll()
+                        .requestMatchers("/health", "/error").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/projects/**").permitAll()
@@ -59,10 +63,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/certificate/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/blog/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/models/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/stickie/**").permitAll()
                         .requestMatchers("/images/**").permitAll()
-                        .requestMatchers("/health").permitAll()
-                        .requestMatchers("/error").permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().hasAuthority("ADMIN")
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
